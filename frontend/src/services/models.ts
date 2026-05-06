@@ -3,6 +3,8 @@
  * 提供获取可用模型列表的功能
  */
 
+import { request } from './http.ts';
+
 export interface VideoModel {
   id: string;
   provider_id: string;
@@ -49,39 +51,25 @@ export interface ImageModelsResponse {
   default_model: string;
 }
 
-const API_BASE = '/api';
-
 /**
  * 获取可用的视频模型列表
  */
 export async function listVideoModels(): Promise<VideoModelsResponse> {
-  const response = await fetch(`${API_BASE}/models/video`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch video models');
-  }
-  return response.json();
+  return request('/api/models/video');
 }
 
 /**
  * 获取可用的文本模型列表
  */
 export async function listTextModels(): Promise<TextModelsResponse> {
-  const response = await fetch(`${API_BASE}/models/text`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch text models');
-  }
-  return response.json();
+  return request('/api/models/text');
 }
 
 /**
  * 获取可用的图片模型列表
  */
 export async function listImageModels(): Promise<ImageModelsResponse> {
-  const response = await fetch(`${API_BASE}/models/image`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch image models');
-  }
-  return response.json();
+  return request('/api/models/image');
 }
 
 export const modelsService = {
