@@ -83,6 +83,16 @@ class Settings:
     video_provider_default: str = os.getenv('VIDEO_PROVIDER_DEFAULT', 'dashscope')
     video_model_default: str = os.getenv('VIDEO_MODEL_DEFAULT', '')
 
+    # 火山引擎视频生成配置
+    volcengine_enabled: bool = os.getenv('VOLCENGINE_ENABLED', 'false').lower() in {'1', 'true', 'yes', 'on'}
+    volcengine_api_key: str = os.getenv('VOLCENGINE_API_KEY', '')
+    volcengine_base_url: str = os.getenv('VOLCENGINE_BASE_URL', 'https://ark.cn-beijing.volces.com')
+    volcengine_video_resolution: str = os.getenv('VOLCENGINE_VIDEO_RESOLUTION', '720P')
+    volcengine_video_max_duration: int = int(os.getenv('VOLCENGINE_VIDEO_MAX_DURATION', '10'))
+    volcengine_timeout: int = int(os.getenv('VOLCENGINE_TIMEOUT', '300'))
+    volcengine_poll_interval: float = float(os.getenv('VOLCENGINE_POLL_INTERVAL', '3'))
+    volcengine_poll_timeout: int = int(os.getenv('VOLCENGINE_POLL_TIMEOUT', '360'))
+
     @property
     def default_text_model(self) -> str:
         provider = str(self.text_provider or '').strip().lower()
@@ -103,6 +113,13 @@ class Settings:
         if models_str:
             return [m.strip() for m in models_str.split(',') if m.strip()]
         return [self.dashscope_video_model]
+
+    def get_volcengine_video_models(self) -> list[str]:
+        """解析火山引擎可用视频模型列表"""
+        models_str = os.getenv('VOLCENGINE_VIDEO_MODELS', '')
+        if models_str:
+            return [m.strip() for m in models_str.split(',') if m.strip()]
+        return []
 
 
 def ensure_dirs() -> None:

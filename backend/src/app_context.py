@@ -3,6 +3,7 @@ from __future__ import annotations
 from backend.src.integrations import AIGateway
 from backend.src.integrations.video_provider_registry import VideoProviderRegistry
 from backend.src.integrations.providers.dashscope_provider import DashScopeVideoProvider
+from backend.src.integrations.providers.volcengine_provider import VolcengineVideoProvider
 from backend.src.integrations.dashscope_client import DashScopeClient
 from backend.src.media.asset_normalizer import normalize_filesystem_media_paths
 from backend.src.media.cache import CacheStore
@@ -132,6 +133,23 @@ class AppContext:
             enabled=True,
         )
         registry.register(dashscope_provider)
+
+        # 注册火山引擎提供商（如果启用）
+        if settings.volcengine_enabled:
+            volcengine_models = settings.get_volcengine_video_models()
+            if volcengine_models:
+                volcengine_provider = VolcengineVideoProvider(
+                    api_key=settings.volcengine_api_key,
+                    base_url=settings.volcengine_base_url,
+                    models=volcengine_models,
+                    resolution=settings.volcengine_video_resolution,
+                    max_duration=settings.volcengine_video_max_duration,
+                    timeout=settings.volcengine_timeout,
+                    poll_interval=settings.volcengine_poll_interval,
+                    poll_timeout=settings.volcengine_poll_timeout,
+                    enabled=True,
+                )
+                registry.register(volcengine_provider)
 
         # 设置默认模型
         registry.set_default_model(settings.default_video_model)
