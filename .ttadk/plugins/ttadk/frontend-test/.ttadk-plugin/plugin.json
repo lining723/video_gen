@@ -1,0 +1,14 @@
+{
+  "name": "ttadk/frontend-test",
+  "display_name": "TTADK Frontend Test",
+  "version": "1.0.0",
+  "description": "Frontend testing workflow skills: webe2e",
+  "author": {"name": "ttadk", "email": "ttadk@bytedance.com"},
+  "tags": [],
+  "mcps": [
+    {"name": "playwright", "path": "playwright.json"}
+  ],
+  "skills": [
+    {"name": "webe2e", "path": "webe2e"}
+  ]
+}

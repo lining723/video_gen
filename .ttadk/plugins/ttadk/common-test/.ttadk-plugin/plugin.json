@@ -1,0 +1,11 @@
+{
+  "name": "ttadk/common-test",
+  "display_name": "TTADK Common Test",
+  "version": "1.0.0",
+  "description": "Common testing skills: prd2case",
+  "author": {"name": "ttadk", "email": "ttadk@bytedance.com"},
+  "tags": [],
+  "skills": [
+    {"name": "prd2case", "path": "prd2case"}
+  ]
+}

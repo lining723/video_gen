@@ -1,0 +1,1 @@
+-- Replaced by 0001_schema.sql in production-baseline setup.

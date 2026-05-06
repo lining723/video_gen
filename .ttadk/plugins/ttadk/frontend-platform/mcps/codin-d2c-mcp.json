@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "codin-d2c-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--registry",
+        "http://bnpm.byted.org/",
+        "@byted/codin-d2c-mcp@latest"
+      ],
+      "env": {
+        "CODIN_D2C_TOKEN": "{{CODIN_D2C_TOKEN}}",
+        "FIGMA_ACCESS_TOKEN": "{{FIGMA_ACCESS_TOKEN}}"
+      }
+    }
+  },
+  "_params": {
+    "CODIN_D2C_TOKEN": {
+      "description": "codin d2c access token",
+      "required": true,
+      "secret": true,
+      "doc_url": "https://bytedance.larkoffice.com/docx/AHeJdfccuoRASfx1hNwcF08Qnzg"
+    },
+    "FIGMA_ACCESS_TOKEN": {
+      "description": "figma access token",
+      "required": true,
+      "secret": true,
+      "doc_url": "https://bytedance.larkoffice.com/docx/Yedmdg8zkoioYexsxtHcxg2Lndf"
+    }
+  }
+}

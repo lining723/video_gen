@@ -1,0 +1,84 @@
+{
+  "name": "ttadk/core",
+  "display_name": "TTADK SDD Workflow",
+  "version": "1.0.0",
+  "description": "TTADK SDD workflow commands and MCP configs",
+  "author": {"name": "ttadk", "email": "ttadk@bytedance.com"},
+  "tags": [
+    "sdd",
+    "adk"
+  ],
+  "commands": [
+    {"name": "plan", "path": "adk/sdd/plan.md"},
+    {"name": "specify", "path": "adk/sdd/specify.md"},
+    {"name": "tasks", "path": "adk/sdd/tasks.md"},
+    {"name": "codereview", "path": "adk/sdd/codereview.md"},
+    {"name": "simplify", "path": "adk/sdd/simplify.md"},
+    {"name": "implement", "path": "adk/sdd/implement.md"},
+    {"name": "clarify", "path": "adk/sdd/clarify.md"},
+    {"name": "analyze", "path": "adk/sdd/analyze.md"},
+    {"name": "commit", "path": "adk/commit.md"},
+    {"name": "archive", "path": "adk/sdd/archive.md"},
+    {"name": "constitution", "path": "adk/sdd/constitution.md"},
+    {"name": "ff", "path": "adk/sdd/ff.md"},
+    {"name": "erd", "path": "adk/sdd/erd.md"},
+    {"name": "readiness", "path": "adk/readiness.md"},
+    {"name": "help", "path": "adk/help.md"},
+    {"name": "brainstorm", "path": "adk/sdd/brainstorm.md"},
+    {"name": "compound", "path": "adk/sdd/compound.md"},
+    {"name": "handoff", "path": "adk/handoff.md"},
+    {"name": "sdt_ff", "path": "adk/sdt/ff.md"},
+    {"name": "sdt_implement", "path": "adk/sdt/implement.md"},
+    {"name": "sdt_clarify", "path": "adk/sdt/clarify.md"}
+  ],
+  "skills": [
+    {"name": "ttadk-knowledge", "path": "ttadk-knowledge"},
+    {"name": "adk-help", "path": "adk-help", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-analyze", "path": "adk-sdd-analyze", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-archive", "path": "adk-sdd-archive", "compatible_tools": ["codex"]},
+    {"name": "adk-commit", "path": "adk-commit", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-constitution", "path": "adk-sdd-constitution", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-erd", "path": "adk-sdd-erd", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-implement", "path": "adk-sdd-implement", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-simplify", "path": "adk-sdd-simplify", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-codereview", "path": "adk-sdd-codereview", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-plan", "path": "adk-sdd-plan", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-specify", "path": "adk-sdd-specify", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-tasks", "path": "adk-sdd-tasks", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-clarify", "path": "adk-sdd-clarify", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-brainstorm", "path": "adk-sdd-brainstorm", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-ff", "path": "adk-sdd-ff", "compatible_tools": ["codex"]},
+    {"name": "adk-readiness", "path": "adk-readiness", "compatible_tools": ["codex"]},
+    {"name": "adk-sdd-compound", "path": "adk-sdd-compound", "compatible_tools": ["codex"]},
+    {"name": "adk-handoff", "path": "adk-handoff", "compatible_tools": ["codex"]},
+    {"name": "adk-sdt-ff", "path": "adk-sdt-ff", "compatible_tools": ["codex"]},
+    {"name": "adk-sdt-implement", "path": "adk-sdt-implement", "compatible_tools": ["codex"]},
+    {"name": "adk-sdt-clarify", "path": "adk-sdt-clarify", "compatible_tools": ["codex"]}
+  ],
+  "mcps": [
+    {"name": "lark_docs", "path": "lark_docs.json"},
+    {"name": "tiksearch", "path": "tiksearch.json"}
+  ],
+  "hooks": [
+    {
+      "name": "claude-track",
+      "path": "prompt-track/claude-track",
+      "compatible_tools": ["claude"]
+    },
+    {
+      "name": "cursor-track",
+      "path": "prompt-track/cursor-track",
+      "compatible_tools": ["cursor"]
+    },
+    {
+      "name": "codex-track",
+      "path": "prompt-track/codex-track",
+      "compatible_tools": ["codex"]
+    },
+    {
+      "name": "coco-track",
+      "path": "prompt-track/coco-track",
+      "compatible_tools": ["coco"]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ai_tool": "codex",
+  "ttadk_version": "0.3.15",
+  "created_date": "2026-04-12",
+  "preferred_language": "zh",
+  "preset": "ttadk/frontend",
+  "preset_ref": {
+    "name": "ttadk/frontend",
+    "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+    "branch": "master"
+  },
+  "plugins": [
+    {
+      "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+      "plugins": [
+        "ttadk/core",
+        "ttadk/frontend-platform",
+        "ttadk/common-test",
+        "ttadk/frontend-test"
+      ]
+    }
+  ]
+}

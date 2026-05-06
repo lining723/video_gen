@@ -1,0 +1,142 @@
+openapi: 3.0.3
+info:
+  title: AI Video Platform API
+  version: 0.2.0
+paths:
+  /api/projects:
+    get:
+      summary: List projects
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create project
+      responses:
+        '201': { description: Created }
+  /api/projects/{projectId}:
+    get:
+      summary: Get project detail bundle
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/projects/{projectId}/timeline:
+    get:
+      summary: Get project timeline
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/projects/{projectId}/scene-design:generate:
+    post:
+      summary: Generate scene design
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/projects/{projectId}/scene-design:review:
+    post:
+      summary: Review scene design
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/projects/{projectId}/storyboard:generate:
+    post:
+      summary: Generate storyboard
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/projects/{projectId}/storyboard/shots/{shotId}:
+    put:
+      summary: Update storyboard shot
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: shotId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/projects/{projectId}/storyboard:review:
+    post:
+      summary: Review storyboard
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/projects/{projectId}/subjects:generate:
+    post:
+      summary: Generate subject assets
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/projects/{projectId}/renders:start:
+    post:
+      summary: Start shot renders
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/projects/{projectId}/renders/shots/{shotId}:retry:
+    post:
+      summary: Retry one shot render
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: shotId
+          required: true
+          schema: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/projects/{projectId}/final-video:compose:
+    post:
+      summary: Compose final video
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/projects/{projectId}/final-video:
+    get:
+      summary: Get final video
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }

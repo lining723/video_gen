@@ -1,0 +1,44 @@
+version: '3.9'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8100
+      APP_API_KEY: dev-secret-key-change-me
+      FRONTEND_URL: http://127.0.0.1:3100
+      OBJECT_STORE_PROVIDER: s3
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: ai-video-platform
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+    ports:
+      - '8100:8100'
+    volumes:
+      - ./backend/data:/app/backend/data
+    depends_on:
+      - minio
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - '3100:3100'
+    depends_on:
+      - backend
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+volumes:
+  minio-data:

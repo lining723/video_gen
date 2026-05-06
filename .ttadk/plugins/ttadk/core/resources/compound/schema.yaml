@@ -1,0 +1,604 @@
+# Compound Scan Dimensions Schema
+
+# Defaults applied to all dimensions unless overridden
+defaults:
+  toc_required: true
+  null_value_passthrough: true
+  source_required: true
+  verify_assertions: false
+  fallback_sniff: false
+  priority: medium
+
+# Shared anchors for repeated structures
+x-anchors:
+  structure_overview: &structure_overview
+    - title: Overview
+      required: true
+  structure_source_ref: &structure_source_ref
+    - title: Source References
+      required: true
+  probe_services_root: &probe_services_root
+    - services/*/
+  probe_services_src: &probe_services_src
+    - services/*/src/**/*
+
+scan_dimensions:
+  - name: Design Patterns
+    target: Factory/strategy/observer and other patterns in services/*
+    output_path: docs/arch/patterns.md
+    update_mode: create
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_src
+        probe_patterns:
+          - "*Factory*"
+          - "*Strategy*"
+          - "*Adapter*"
+          - "*Observer*"
+        fallback_sniff: true
+      priority: high
+    output:
+      structure:
+        - *structure_overview
+        - title: Creational Patterns
+          required: false
+        - title: Structural Patterns
+          required: false
+        - title: Behavioral Patterns
+          required: false
+        - title: Pattern Dependencies
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        Must bind file path + line range; only record patterns actually
+        used in code, do not speculate.
+        Good output: each pattern has Location (file path+lines),
+        Purpose, Implementation — three key elements
+        Bad output: only lists pattern names without code evidence;
+        speculates patterns that don't exist in code
+      verify_assertions: true
+      dedup:
+        primary_for:
+          - Strategy Pattern
+          - Factory Pattern
+          - Adapter Pattern
+          - Registry Pattern
+
+  - name: Coding Standards
+    target: Coding style, naming conventions, code organization standards
+    output_path: docs/CODING.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_root
+        probe_patterns:
+          - "*.eslintrc*"
+          - "*.prettierrc*"
+          - "*tsconfig*"
+      priority: medium
+    output:
+      style: constitution
+      toc_required: false
+      source_required: false
+      structure:
+        - title: Core Conventions
+          required: true
+          subsections:
+            - title: Naming Conventions
+              required: false
+            - title: File Organization
+              required: false
+            - title: Error Handling
+              required: false
+            - title: Logging Standards
+              required: false
+            - title: Configuration Management
+              required: false
+        - title: Fixed Rules
+          required: true
+        - title: Governance
+          required: true
+        - title: Version Line
+          required: true
+      extraction_guidance: |
+        Focus on coding standards/conventions, not Code of Conduct.
+        Good output: each standard has specific example code and
+        violation examples
+        Bad output: vague descriptions like "follow best practices"
+        without concrete rules
+      dedup:
+        primary_for:
+          - Naming Conventions
+          - Error Handling Standards
+          - Logging Standards
+        secondary_for:
+          - topic: Strategy Pattern
+            ref: docs/arch/patterns.md#strategy-pattern
+          - topic: Factory Pattern
+            ref: docs/arch/patterns.md#factory-pattern
+
+  - name: Common Bugs & Fixes
+    target: Typical fixed issues and workarounds
+    output_path: docs/references/fixes.md
+    update_mode: create
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_root
+        probe_patterns:
+          - "CHANGELOG*"
+          - "HISTORY*"
+        fallback_sniff: true
+      priority: high
+    output:
+      structure:
+        - *structure_overview
+        - title: Bug List
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        Each entry must have trigger condition + impact scope + fix
+        method + source file; do not fabricate unverified bugs.
+        Good output: each bug has trigger condition, impact, fix method,
+        related file paths
+        Bad output: fabricating potentially existing but unverified bugs;
+        vague descriptions like "watch out for null pointers"
+      verify_assertions: true
+      dedup:
+        primary_for:
+          - Bug Fix Records
+
+  - name: Config Templates
+    target: Environment variables, Docker, CI configuration
+    output_path: docs/references/config-templates.md
+    update_mode: create
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_root
+        probe_patterns:
+          - ".env*"
+          - "*.config.*"
+      priority: medium
+    output:
+      structure:
+        - *structure_overview
+        - title: Environment Variables
+          required: false
+        - title: Docker Configuration
+          required: false
+        - title: CI/CD Configuration
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        Extract specific env var names, types, default values,
+        descriptions; extract config file templates.
+        Good output: env var table with Var/Type/Default/Desc columns
+        Bad output: vague descriptions like "project uses env vars"
+      dedup:
+        primary_for:
+          - Config Templates
+
+  - name: Test Patterns
+    target: Test structure, mock strategies, coverage patterns
+    output_path: docs/references/testing-patterns.md
+    update_mode: create
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_root
+        probe_patterns:
+          - "*.test.*"
+          - "*.spec.*"
+          - "__tests__*"
+      priority: medium
+    output:
+      structure:
+        - *structure_overview
+        - title: Test Structure
+          required: false
+        - title: Mock Strategies
+          required: false
+        - title: Coverage Patterns
+          required: false
+        - title: Test Toolchain
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        Identify test frameworks, directory structure, mock approaches,
+        coverage configuration.
+        Good output: lists specific test file paths, mock frameworks,
+        coverage numbers
+        Bad output: vague descriptions like "project has unit tests"
+      dedup:
+        primary_for:
+          - Test Patterns
+
+  - name: Deployment Scripts
+    target: Build/deploy/release workflows
+    output_path: docs/references/deployment.md
+    update_mode: create
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_root
+        probe_patterns:
+          - Dockerfile
+          - deploy*
+          - ".github/workflows/*"
+      priority: low
+    output:
+      structure:
+        - *structure_overview
+        - title: Build Process
+          required: false
+        - title: Deployment Process
+          required: false
+        - title: Release Process
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        Extract specific build commands, deployment scripts, version
+        management strategies.
+        Good output: lists specific build commands, deployment steps,
+        rollback strategies
+        Bad output: vague descriptions like "project uses CI/CD"
+      dedup:
+        primary_for:
+          - Deployment Process
+
+  - name: Reliability Practices
+    target: Fault tolerance, retry, degradation, monitoring patterns
+    output_path: docs/RELIABILITY.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_src
+        probe_patterns:
+          - "*retry*"
+          - "*circuit*"
+          - "*health*"
+        fallback_sniff: true
+      priority: medium
+    output:
+      style: constitution
+      toc_required: false
+      source_required: false
+      structure:
+        - title: Core Practices
+          required: true
+          subsections:
+            - title: Fault Tolerance Patterns
+              required: false
+            - title: Degradation Strategy
+              required: false
+            - title: Monitoring Patterns
+              required: false
+            - title: Graceful Startup/Shutdown
+              required: false
+        - title: Fixed Rules
+          required: true
+        - title: Governance
+          required: true
+        - title: Version Line
+          required: true
+      extraction_guidance: |
+        Identify retry mechanisms, circuit breakers, timeout strategies,
+        degradation plans, monitoring configuration.
+        Good output: lists specific retry counts/delays, degradation
+        chains, monitoring endpoints
+        Bad output: vague descriptions like "system has fault tolerance"
+      dedup:
+        primary_for:
+          - Retry Mechanism
+          - Degradation Strategy
+          - SLO Targets
+        secondary_for:
+          - topic: Auth Degradation
+            ref: docs/SECURITY.md#auth-degradation
+
+  - name: Security Practices
+    target: Authentication, authorization, encryption, audit patterns
+    output_path: docs/SECURITY.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths: *probe_services_src
+        probe_patterns:
+          - "*auth*"
+          - "*oauth*"
+          - "*sso*"
+          - "*token*"
+        fallback_sniff: true
+      priority: medium
+    output:
+      style: constitution
+      toc_required: false
+      source_required: false
+      structure:
+        - title: Core Practices
+          required: true
+          subsections:
+            - title: Authentication Mechanisms
+              required: false
+            - title: Authorization Patterns
+              required: false
+            - title: Encryption Practices
+              required: false
+            - title: Audit Logging
+              required: false
+        - title: Fixed Rules
+          required: true
+        - title: Governance
+          required: true
+        - title: Version Line
+          required: true
+      extraction_guidance: |
+        Auth flows must include protocol type + endpoint + token
+        lifecycle; don't vaguely describe "uses OAuth".
+        Good output: lists OAuth2 Device Flow, endpoint URLs, token
+        validity period, refresh strategy
+        Bad output: vague descriptions like "uses OAuth auth"; omits
+        token lifecycle details
+      dedup:
+        primary_for:
+          - Auth Flow
+          - Authorization Mechanism
+          - Encryption Standards
+        secondary_for:
+          - topic: Auth State Machine
+            ref: docs/RELIABILITY.md#auth-state-machine
+          - topic: Credential Resolution
+            ref: docs/arch/patterns.md#registry-pattern
+
+  - name: Architecture Index
+    target: Architecture document index and navigation
+    output_path: docs/arch/index.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths:
+          - docs/
+        probe_patterns:
+          - "**/*.md"
+      priority: low
+    output:
+      source_required: false
+      structure:
+        - *structure_overview
+        - title: Knowledge Asset Manifest
+          required: true
+        - title: SDD Command Knowledge Guidance
+          required: true
+        - title: Document List
+          required: false
+      extraction_guidance: |
+        List architecture-related documents, providing a brief
+        description and link for each.
+        Also maintain the Knowledge Asset Manifest (categorized by
+        document, with path, generation method, and description) and
+        SDD Command Knowledge Guidance (mapping knowledge assets to
+        load per command phase with their purpose).
+        Section titles are output in the language matching
+        preferred_language, but command references use English
+        identifiers.
+        Good output: each document has name, path, generation method,
+        brief description; each command phase has a clear knowledge
+        asset list and purpose
+        Bad output: only file names without descriptions; knowledge
+        guidance is incomplete or outdated
+      dedup:
+        primary_for:
+          - Architecture Navigation
+
+  - name: Product Specs Index
+    target: Product requirements document index and navigation
+    output_path: docs/product-specs/index.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths:
+          - specs/
+        probe_patterns:
+          - "*.md"
+      priority: low
+    output:
+      source_required: false
+      structure:
+        - *structure_overview
+        - title: Requirements List
+          required: false
+      extraction_guidance: |
+        List product requirement documents, providing a brief
+        description and status for each.
+        Good output: each requirement has name, status, dependencies
+        Bad output: only file names without status
+      dedup:
+        primary_for:
+          - Requirements Navigation
+
+  - name: References Index
+    target: Reference resource index and navigation
+    output_path: docs/references/index.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths:
+          - docs/references/
+        probe_patterns:
+          - "*.md"
+      priority: low
+    output:
+      source_required: false
+      structure:
+        - *structure_overview
+        - title: Reference List
+          required: false
+      extraction_guidance: |
+        List reference resources, organized by category (development,
+        ops, testing, etc.).
+        Good output: each resource has name, link, brief description,
+        category
+        Bad output: only links without descriptions
+      dedup:
+        primary_for:
+          - Reference Navigation
+
+  - name: Project Constitution
+    target: Project principles, governance rules
+    output_path: docs/CONSTITUTION.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths:
+          - CONSTITUTION.md
+          - AGENTS.md
+        probe_patterns:
+          - "*"
+      priority: low
+    output:
+      style: constitution
+      toc_required: false
+      source_required: false
+      structure:
+        - title: Core Principles
+          required: true
+          subsections:
+            - title: Project Principles
+              required: false
+            - title: Decision Records
+              required: false
+        - title: Fixed Rules
+          required: true
+        - title: Governance
+          required: true
+        - title: Version Line
+          required: true
+      extraction_guidance: |
+        Read existing CONSTITUTION.md content and assess whether
+        updates are needed.
+        Good output: preserves correct content, updates outdated
+        content, marks sources
+        Bad output: rewrites the entire constitution losing existing
+        correct content
+      dedup:
+        primary_for:
+          - Project Constitution
+
+  - name: Quality Standards
+    target: Quality gates, testing strategy
+    output_path: docs/QUALITY.md
+    update_mode: update
+    scan_source: code
+    control:
+      activation:
+        probe_paths:
+          - QUALITY.md
+        probe_patterns:
+          - "*"
+      priority: low
+    output:
+      style: constitution
+      toc_required: false
+      source_required: false
+      structure:
+        - title: Core Standards
+          required: true
+          subsections:
+            - title: Quality Gates
+              required: false
+            - title: Testing Strategy
+              required: false
+        - title: Fixed Rules
+          required: true
+        - title: Governance
+          required: true
+        - title: Version Line
+          required: true
+      extraction_guidance: |
+        Read existing QUALITY.md content and assess whether updates
+        are needed.
+        Good output: preserves correct content, updates outdated content
+        Bad output: rewrites losing existing content
+      dedup:
+        primary_for:
+          - Quality Standards
+
+  - name: Requirement Patterns
+    target: Requirement structure and technical decisions in specs/
+    output_path: docs/product-specs/patterns.md
+    update_mode: create
+    scan_source: spec
+    control:
+      activation:
+        probe_paths:
+          - specs/
+        probe_patterns:
+          - spec.md
+          - plan.md
+          - tasks.md
+        fallback_sniff: true
+      priority: medium
+    output:
+      structure:
+        - *structure_overview
+        - title: Requirement Structure Patterns
+          required: false
+        - title: Technical Decision Patterns
+          required: false
+        - title: Cross-Requirement Reuse Patterns
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        Identify requirement structure patterns, technical decision
+        patterns, cross-requirement reuse patterns.
+        Good output: lists specific requirement pattern examples and
+        source spec files
+        Bad output: vague descriptions like "requirements follow user
+        story format"
+      dedup:
+        primary_for:
+          - Requirement Patterns
+
+  - name: Service Topology
+    target: Inter-service dependencies, interface contracts
+    output_path: docs/arch/service-topology.md
+    update_mode: append
+    scan_source: both
+    control:
+      activation:
+        probe_paths: *probe_services_root
+        probe_patterns:
+          - package.json
+          - go.mod
+      priority: high
+    output:
+      structure:
+        - *structure_overview
+        - title: Service Dependencies
+          required: false
+        - title: Interface Contracts
+          required: false
+        - title: Service Boundaries
+          required: false
+        - *structure_source_ref
+      extraction_guidance: |
+        API contracts must include method/request/response/error; do
+        not omit error codes.
+        Good output: each API has method, request format, response
+        format, error codes
+        Bad output: vague descriptions like "service A calls service B";
+        omits error codes
+      verify_assertions: true
+      dedup:
+        primary_for:
+          - Service Topology
+          - Interface Contracts

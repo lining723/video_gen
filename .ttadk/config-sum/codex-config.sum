@@ -1,0 +1,56 @@
+{
+  "ai_tool": "codex",
+  "ttadk_version": "0.3.15",
+  "created_date": "2026-04-12",
+  "preferred_language": "zh",
+  "preset": "ttadk/frontend",
+  "preset_state": {
+    "preset_ref": {
+      "name": "ttadk/frontend",
+      "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+      "branch": "master"
+    },
+    "managed_plugins": [
+      {
+        "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+        "plugins": [
+          "ttadk/core",
+          "ttadk/frontend-platform",
+          "ttadk/common-test",
+          "ttadk/frontend-test"
+        ]
+      }
+    ],
+    "last_synced_at": "2026-04-22T09:03:05.876Z"
+  },
+  "plugins": [
+    {
+      "name": "ttadk/core",
+      "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+      "branch": "master",
+      "commit": "74692a592c3f34df11e71603cb53f7c6161edd88",
+      "updated_at": "2026-05-04T14:02:03.240Z"
+    },
+    {
+      "name": "ttadk/frontend-platform",
+      "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+      "branch": "master",
+      "commit": "99b9189491d360521b9585f34b32a1194b4e425e",
+      "updated_at": "2026-04-12T01:01:45.108Z"
+    },
+    {
+      "name": "ttadk/common-test",
+      "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+      "branch": "master",
+      "commit": "54653cfea1536396c10f68331c4fd84f611a4fe4",
+      "updated_at": "2026-04-22T09:03:05.860Z"
+    },
+    {
+      "name": "ttadk/frontend-test",
+      "git_repo": "git@code.byted.org:tiktok/ttadk_plugin_market.git",
+      "branch": "master",
+      "commit": "54653cfea1536396c10f68331c4fd84f611a4fe4",
+      "updated_at": "2026-04-22T09:03:05.875Z"
+    }
+  ]
+}

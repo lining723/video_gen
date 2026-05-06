@@ -1,0 +1,476 @@
+openapi: 3.0.3
+info:
+  title: 主体一致性控制 API
+  description: 视频生成平台主体资产管理接口
+  version: 1.0.0
+  contact:
+    name: 智能视频生成平台
+
+servers:
+  - url: http://127.0.0.1:8100
+    description: 本地开发服务器
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /api/projects/{projectId}/subjects:generate:
+    post:
+      summary: 生成项目主体
+      description: 为项目生成全局主体图，自动提取视觉特征描述
+      operationId: generateSubjects
+      tags:
+        - Subjects
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 项目 ID
+      responses:
+        '202':
+          description: 主体生成任务已启动
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - items
+                properties:
+                  ok:
+                    type: boolean
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subject'
+                  diagnostics:
+                    type: string
+                    description: 生成诊断信息
+                  warning:
+                    type: string
+                    description: 警告信息
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/projects/{projectId}/subjects/{subjectId}:
+    get:
+      summary: 获取主体详情
+      operationId: getSubject
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: 更新主体
+      description: 更新主体的特征描述等信息
+      operationId: updateSubject
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feature_description:
+                  type: string
+                  maxLength: 1000
+                  description: 视觉特征描述
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+        '400':
+          description: 主体已锁定，无法编辑
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/subjects/{subjectId}:lock:
+    post:
+      summary: 锁定主体
+      description: 锁定主体特征，防止意外修改
+      operationId: lockSubject
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      responses:
+        '200':
+          description: 锁定成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+
+  /api/projects/{projectId}/subjects/{subjectId}:unlock:
+    post:
+      summary: 解锁主体
+      operationId: unlockSubject
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      responses:
+        '200':
+          description: 解锁成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+
+  /api/projects/{projectId}/subjects/{subjectId}:regenerate:
+    post:
+      summary: 重新生成主体
+      description: 重新生成主体图，创建新版本
+      operationId: regenerateSubject
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cascade_render:
+                  type: boolean
+                  default: false
+                  description: 是否级联重新渲染相关镜头
+      responses:
+        '200':
+          description: 重新生成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+
+  /api/projects/{projectId}/subjects/{subjectId}/versions:
+    get:
+      summary: 获取主体版本历史
+      operationId: listSubjectVersions
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - items
+                properties:
+                  ok:
+                    type: boolean
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubjectVersion'
+
+  /api/projects/{projectId}/subjects/{subjectId}:rollback:
+    post:
+      summary: 回退主体版本
+      operationId: rollbackSubjectVersion
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - $ref: '#/components/parameters/subjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - target_version
+              properties:
+                target_version:
+                  type: integer
+                  minimum: 1
+                  description: 目标版本号
+      responses:
+        '200':
+          description: 回退成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+        '404':
+          description: 版本不存在
+
+  /api/projects/{projectId}/subjects/shots/{shotId}:generate:
+    post:
+      summary: 为镜头生成主体
+      description: 为特定镜头生成主体图，支持变体生成
+      operationId: generateShotSubject
+      tags:
+        - Subjects
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - name: shotId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 镜头 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode:
+                  type: string
+                  enum:
+                    - generate
+                    - variant
+                    - previous_tail_frame
+                  default: generate
+                  description: 生成模式
+                variant_hint:
+                  type: string
+                  description: 变体方向提示（如"微笑表情"、"运动装束"）
+      responses:
+        '201':
+          description: 生成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - item
+                properties:
+                  ok:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/Subject'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  parameters:
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 项目 ID
+
+    subjectId:
+      name: subjectId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 主体 ID
+
+  schemas:
+    Subject:
+      type: object
+      required:
+        - id
+        - project_id
+        - name
+        - variant_type
+        - image_version
+      properties:
+        id:
+          type: string
+          description: 主体 ID
+        project_id:
+          type: string
+          description: 所属项目 ID
+        shot_id:
+          type: string
+          description: 关联镜头 ID（空为全局主体）
+        name:
+          type: string
+          description: 主体名称
+        profile:
+          type: string
+          description: 角色简介
+        image_path:
+          type: string
+          description: 图片存储路径
+        source_url:
+          type: string
+          description: 原始图片 URL
+        image_version:
+          type: integer
+          minimum: 1
+          description: 当前图片版本号
+        feature_description:
+          type: string
+          maxLength: 1000
+          description: 视觉特征描述
+        base_subject_id:
+          type: string
+          description: 基础主体 ID（变体专用）
+        variant_type:
+          type: string
+          enum:
+            - base
+            - variant
+          description: 主体类型
+        variant_hint:
+          type: string
+          description: 变体方向提示
+        is_locked:
+          type: boolean
+          description: 是否锁定
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新时间
+
+    SubjectVersion:
+      type: object
+      required:
+        - id
+        - subject_id
+        - version
+        - image_path
+      properties:
+        id:
+          type: string
+        subject_id:
+          type: string
+        version:
+          type: integer
+        image_path:
+          type: string
+        source_url:
+          type: string
+        feature_description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - ok
+        - error
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: 错误信息
+
+  responses:
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            ok: false
+            error: Resource not found
+
+    Unauthorized:
+      description: 未授权
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            ok: false
+            error: Unauthorized

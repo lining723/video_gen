@@ -1,0 +1,1 @@
+ALTER TABLE render_tasks ADD COLUMN force_refresh INTEGER NOT NULL DEFAULT 0;
