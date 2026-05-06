@@ -1,0 +1,147 @@
+/* 关键帧网格样式 */
+
+.keyframe-grid {
+  margin: 16px 0;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.grid-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.grid-container {
+  margin: 0 auto;
+}
+
+.grid-item {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f5f5;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.grid-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grid-item .time-label {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 失败状态 */
+.failed-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+}
+
+.warning-icon {
+  font-size: 24px;
+  color: #ff4d4f;
+}
+
+.failed-text {
+  font-size: 14px;
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.error-text {
+  font-size: 12px;
+  color: #999;
+  max-width: 80%;
+  text-align: center;
+}
+
+/* 生成中状态 */
+.generating-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f5ff;
+  border: 1px solid #adc6ff;
+}
+
+/* 等待状态 */
+.pending-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+}
+
+.pending-text {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 无数据提示 */
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .grid-container {
+    gap: 6px;
+  }
+
+  .grid-item .time-label {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .grid-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .keyframe-grid {
+    padding: 12px;
+  }
+
+  .grid-container {
+    gap: 4px;
+  }
+}

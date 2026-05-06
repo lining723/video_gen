@@ -7,6 +7,7 @@ from .subjects import register_subject_routes
 from .renders import register_render_routes
 from .final_video import register_final_video_routes
 from .project_timeline import register_timeline_routes
+from .keyframes import register_keyframe_routes
 
 
 def register_all(router, context) -> None:
@@ -17,3 +18,4 @@ def register_all(router, context) -> None:
     register_render_routes(router, context)
     register_final_video_routes(router, context)
     register_timeline_routes(router, context)
+    register_keyframe_routes(router, context)

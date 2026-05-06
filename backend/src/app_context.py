@@ -5,10 +5,12 @@ from backend.src.media.asset_normalizer import normalize_filesystem_media_paths
 from backend.src.media.cache import CacheStore
 from backend.src.media.object_store import ObjectStore
 from backend.src.orchestrators.compose_pipeline import ComposePipeline
+from backend.src.orchestrators.keyframe_pipeline import KeyframePipeline
 from backend.src.orchestrators.render_pipeline import RenderPipeline
 from backend.src.orchestrators.subject_pipeline import SubjectPipeline
 from backend.src.repositories.db import SQLiteDatabase
 from backend.src.repositories.final_video_repository import FinalVideoRepository
+from backend.src.repositories.keyframe_repository import KeyframeRepository
 from backend.src.repositories.project_repository import ProjectRepository
 from backend.src.repositories.render_repository import RenderRepository
 from backend.src.repositories.scene_repository import SceneRepository
@@ -32,6 +34,7 @@ class AppContext:
         self.subject_repo = SubjectRepository(db)
         self.render_repo = RenderRepository(db)
         self.final_repo = FinalVideoRepository(db)
+        self.keyframe_repo = KeyframeRepository(db)
         self.audit_service = AuditService()
         self.object_store = ObjectStore()
         if settings.object_store_provider == 'filesystem':
@@ -56,6 +59,14 @@ class AppContext:
         self.subject_pipeline = SubjectPipeline(
             self.storyboard_repo,
             self.subject_repo,
+            self.object_store,
+            self.audit_service,
+            self.ai_gateway,
+        )
+        self.keyframe_pipeline = KeyframePipeline(
+            self.storyboard_repo,
+            self.subject_repo,
+            self.keyframe_repo,
             self.object_store,
             self.audit_service,
             self.ai_gateway,

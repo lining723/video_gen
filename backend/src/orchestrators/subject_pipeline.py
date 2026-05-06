@@ -53,7 +53,12 @@ class SubjectPipeline:
                 log_event('subject.fallback_used', project_id=project['id'], subject_name=name, **diagnostic)
             self.subject_repo.save(asset)
             results.append(asset)
-        project['status'] = 'subject_ready'
-        project['current_stage'] = 'subject_ready'
+
+        # 触发关键帧生成
+        project['status'] = 'keyframe_generating'
+        project['current_stage'] = 'keyframe_generating'
+        log_event('subject.completed', project_id=project['id'], count=len(results))
+
         self.audit_service.record('subjects.generated', project_id=project['id'], count=len(results), fallback_count=len(diagnostics))
         return {'items': results, 'diagnostics': diagnostics}
+

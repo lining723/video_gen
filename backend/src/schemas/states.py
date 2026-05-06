@@ -7,6 +7,7 @@ PROJECT_STATES = {
     "storyboard_reviewing",
     "storyboard_approved",
     "subject_generating",
+    "keyframe_generating",  # 新增：关键帧生成中
     "subject_ready",
     "video_rendering",
     "video_render_partial_failed",
