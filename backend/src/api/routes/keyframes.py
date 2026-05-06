@@ -205,6 +205,6 @@ def register_keyframe_routes(router, context) -> None:
         }
 
     # 注册路由
-    router.add_route('GET', '/projects/{projectId}/shots/{shotId}/keyframes', get_shot_keyframes)
-    router.add_route('GET', '/projects/{projectId}/keyframes/status', get_project_keyframes_status)
-    router.add_route('POST', '/projects/{projectId}/shots/{shotId}/keyframes/{position}/retry', retry_keyframe)
+    router.add("GET", "/api/projects/{projectId}/shots/{shotId}/keyframes", get_shot_keyframes)
+    router.add("GET", "/api/projects/{projectId}/keyframes/status", get_project_keyframes_status)
+    router.add("POST", "/api/projects/{projectId}/shots/{shotId}/keyframes/{position}/retry", retry_keyframe)
