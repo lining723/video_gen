@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import json
+from typing import TYPE_CHECKING
 
 from backend.src.settings.config import settings
 from backend.src.settings.logging import log_event
@@ -10,9 +11,13 @@ from .dashscope_client import DashScopeClient
 from .deepseek_client import DeepSeekClient
 from .ollama_client import OllamaClient
 
+if TYPE_CHECKING:
+    from .video_provider_registry import VideoProviderRegistry
+    from .video_provider_base import VideoGenerationRequest
+
 
 class AIGateway:
-    def __init__(self) -> None:
+    def __init__(self, video_provider_registry: VideoProviderRegistry | None = None) -> None:
         self.ollama = OllamaClient(settings.ollama_base_url, settings.ollama_text_model, timeout=settings.ollama_timeout)
         self.deepseek = DeepSeekClient(
             settings.deepseek_base_url,
@@ -29,6 +34,7 @@ class AIGateway:
             poll_interval=settings.dashscope_poll_interval,
             poll_timeout=settings.dashscope_poll_timeout,
         )
+        self.video_registry = video_provider_registry
 
     def _normalize_error(self, error: Exception, provider: str, capability: str, model: str) -> dict:
         detail = {
@@ -192,6 +198,11 @@ class AIGateway:
             return f'{subject_name}的统一形象'
 
     def submit_video(self, prompt: str, duration: int, first_frame_url: str | None = None, model: str | None = None) -> dict:
+        # 如果有 VideoProviderRegistry，使用新的 Provider 架构
+        if self.video_registry:
+            return self._submit_video_via_registry(prompt, duration, first_frame_url, model)
+
+        # 回退到旧的 DashScope 客户端
         video_model = self._video_model(model)
         try:
             return self.dashscope.submit_video_task(
@@ -209,10 +220,81 @@ class AIGateway:
                 raise RuntimeError(json.dumps(detail, ensure_ascii=False)) from error
             return {'provider_url': None, 'task_id': None, 'raw': None, 'model': 'fallback-video', 'fallback_used': True, 'diagnostic': detail}
 
-    def poll_video_task(self, task_id: str) -> dict:
+    def _submit_video_via_registry(self, prompt: str, duration: int, first_frame_url: str | None, model: str | None) -> dict:
+        """通过 VideoProviderRegistry 提交视频生成任务"""
+        from .video_provider_base import VideoGenerationRequest
+
+        # 确定使用的模型
+        model_id = model or self.video_registry.default_model
+
+        # 获取对应的 Provider
+        provider = self.video_registry.get_provider_for_model(model_id)
+        if not provider:
+            detail = {'error': f'No provider found for model: {model_id}', 'model': model_id}
+            log_event('video.provider_not_found', **detail)
+            if not settings.allow_model_fallback:
+                raise RuntimeError(json.dumps(detail, ensure_ascii=False))
+            return {'provider_url': None, 'task_id': None, 'raw': None, 'model': model_id, 'fallback_used': True, 'diagnostic': detail}
+
+        # 构建请求
+        request = VideoGenerationRequest(
+            prompt=prompt,
+            duration=duration,
+            first_frame_url=first_frame_url,
+            resolution=settings.dashscope_video_resolution,
+            ratio=settings.dashscope_video_ratio,
+            model=model_id,
+        )
+
+        try:
+            result = provider.submit_video_task(request)
+            return {
+                'task_id': result.task_id,
+                'provider_url': result.provider_url,
+                'status': result.status,
+                'progress_message': result.progress_message,
+                'raw': result.raw,
+                'model': result.model,
+                'diagnostic': result.diagnostic,
+            }
+        except Exception as error:
+            detail = self._normalize_error(error, provider.provider_id, 'video_generation', model_id)
+            log_event(f'{provider.provider_id}.video.failed', **detail)
+            if not settings.allow_model_fallback:
+                raise RuntimeError(json.dumps(detail, ensure_ascii=False)) from error
+            return {'provider_url': None, 'task_id': None, 'raw': None, 'model': model_id, 'fallback_used': True, 'diagnostic': detail}
+
+    def poll_video_task(self, task_id: str, provider_id: str | None = None) -> dict:
+        # 如果有 VideoProviderRegistry，使用新的 Provider 架构
+        if self.video_registry and provider_id:
+            return self._poll_video_via_registry(task_id, provider_id)
+
+        # 回退到旧的 DashScope 客户端
         try:
             return self.dashscope.get_task_status(task_id)
         except Exception as error:
             detail = self._normalize_error(error, 'dashscope', 'task_poll', settings.dashscope_video_model)
             log_event('dashscope.video.poll_failed', **detail, task_id=task_id)
+            raise RuntimeError(json.dumps(detail, ensure_ascii=False)) from error
+
+    def _poll_video_via_registry(self, task_id: str, provider_id: str) -> dict:
+        """通过 VideoProviderRegistry 轮询视频任务状态"""
+        provider = self.video_registry.get_provider(provider_id)
+        if not provider:
+            raise RuntimeError(f'Provider not found: {provider_id}')
+
+        try:
+            result = provider.poll_task_status(task_id)
+            return {
+                'task_id': result.task_id,
+                'status': result.status,
+                'provider_status': result.provider_status,
+                'provider_url': result.provider_url,
+                'progress_message': result.progress_message,
+                'error_message': result.error_message,
+                'raw': result.raw,
+            }
+        except Exception as error:
+            detail = self._normalize_error(error, provider_id, 'task_poll', '')
+            log_event(f'{provider_id}.video.poll_failed', **detail, task_id=task_id)
             raise RuntimeError(json.dumps(detail, ensure_ascii=False)) from error

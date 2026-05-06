@@ -1,6 +1,7 @@
 import { appShell, initSidebarState, toggleSidebar } from '../../../modules/layout/AppLayout.tsx';
 import { projectDashboardContent } from '../../../modules/project-dashboard/ProjectDashboardPage.tsx';
 import { getTimeline, updateProjectSettings } from '../../../services/projects.ts';
+import { listVideoModels, listTextModels, listImageModels } from '../../../services/models.ts';
 import { formatProjectLabel } from '../../../utils/project.ts';
 
 function setProjectSettingsFeedback(root, kind, message) {
@@ -14,6 +15,75 @@ function setProjectSettingsFeedback(root, kind, message) {
   target.hidden = false;
   target.className = `notice ${kind}`;
   target.textContent = message;
+}
+
+async function populateModelSelectors(root, project) {
+  // 填充视频模型选择器
+  try {
+    const videoData = await listVideoModels();
+    const videoSelect = root.querySelector('#project-video-model') as HTMLSelectElement;
+    if (videoSelect && videoData.ok) {
+      // 清空现有选项
+      videoSelect.innerHTML = '<option value="">使用默认模型</option>';
+      // 按提供商分组
+      for (const provider of videoData.providers || []) {
+        const group = document.createElement('optgroup');
+        group.label = provider.name;
+        for (const model of provider.models || []) {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.textContent = model.name;
+          if (model.id === project.video_model) {
+            option.selected = true;
+          }
+          group.appendChild(option);
+        }
+        videoSelect.appendChild(group);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load video models:', error);
+  }
+
+  // 填充文本模型选择器
+  try {
+    const textData = await listTextModels();
+    const textSelect = root.querySelector('#project-text-model') as HTMLSelectElement;
+    if (textSelect && textData.ok) {
+      textSelect.innerHTML = '<option value="">使用默认模型</option>';
+      for (const model of textData.models || []) {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = `${model.name} (${model.provider_name})`;
+        if (model.id === project.text_model) {
+          option.selected = true;
+        }
+        textSelect.appendChild(option);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load text models:', error);
+  }
+
+  // 填充图片模型选择器
+  try {
+    const imageData = await listImageModels();
+    const imageSelect = root.querySelector('#project-image-model') as HTMLSelectElement;
+    if (imageSelect && imageData.ok) {
+      imageSelect.innerHTML = '<option value="">使用默认模型</option>';
+      for (const model of imageData.models || []) {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = `${model.name} (${model.provider_name})`;
+        if (model.id === project.image_model) {
+          option.selected = true;
+        }
+        imageSelect.appendChild(option);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load image models:', error);
+  }
 }
 
 export async function renderProjectDashboard(root, projectId) {
@@ -43,6 +113,9 @@ export async function renderProjectDashboard(root, projectId) {
     projectStatus: data.project.status,
     projectStage: data.project.current_stage,
   });
+
+  // 填充模型选择器
+  await populateModelSelectors(root, data.project);
 
   const saveButton = root.querySelector('#save-project-model-settings');
   if (saveButton) {

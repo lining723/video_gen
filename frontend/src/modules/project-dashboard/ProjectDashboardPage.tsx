@@ -49,15 +49,21 @@ export function projectDashboardContent(data) {
       <div class="compact-grid">
         <div class="field">
           <label for="project-text-model">文本模型</label>
-          <input id="project-text-model" value="${escapeAttribute(project.text_model || '')}" placeholder="如：deepseek-reasoner" />
+          <select id="project-text-model">
+            <option value="">使用默认模型</option>
+          </select>
         </div>
         <div class="field">
           <label for="project-image-model">图片模型</label>
-          <input id="project-image-model" value="${escapeAttribute(project.image_model || '')}" placeholder="如：wan2.7-image" />
+          <select id="project-image-model">
+            <option value="">使用默认模型</option>
+          </select>
         </div>
         <div class="field">
           <label for="project-video-model">视频模型</label>
-          <input id="project-video-model" value="${escapeAttribute(project.video_model || '')}" placeholder="如：wan2.7-i2v" />
+          <select id="project-video-model">
+            <option value="">使用默认模型</option>
+          </select>
         </div>
       </div>
       <div class="action-row" style="margin-top:18px;">

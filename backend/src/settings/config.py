@@ -79,12 +79,30 @@ class Settings:
     render_status_poll_interval: float = float(os.getenv('RENDER_STATUS_POLL_INTERVAL', '5'))
     allow_model_fallback: bool = os.getenv('ALLOW_MODEL_FALLBACK', 'true').lower() in {'1', 'true', 'yes', 'on'}
 
+    # 多视频提供商配置
+    video_provider_default: str = os.getenv('VIDEO_PROVIDER_DEFAULT', 'dashscope')
+    video_model_default: str = os.getenv('VIDEO_MODEL_DEFAULT', '')
+
     @property
     def default_text_model(self) -> str:
         provider = str(self.text_provider or '').strip().lower()
         if provider == 'deepseek':
             return self.deepseek_text_model
         return self.ollama_text_model
+
+    @property
+    def default_video_model(self) -> str:
+        """返回默认视频模型ID"""
+        if self.video_model_default:
+            return self.video_model_default
+        return f"dashscope-{self.dashscope_video_model}"
+
+    def get_dashscope_video_models(self) -> list[str]:
+        """解析 DashScope 可用视频模型列表"""
+        models_str = os.getenv('DASHSCOPE_VIDEO_MODELS', '')
+        if models_str:
+            return [m.strip() for m in models_str.split(',') if m.strip()]
+        return [self.dashscope_video_model]
 
 
 def ensure_dirs() -> None:

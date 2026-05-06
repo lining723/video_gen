@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from backend.src.integrations import AIGateway
+from backend.src.integrations.video_provider_registry import VideoProviderRegistry
+from backend.src.integrations.providers.dashscope_provider import DashScopeVideoProvider
+from backend.src.integrations.dashscope_client import DashScopeClient
 from backend.src.media.asset_normalizer import normalize_filesystem_media_paths
 from backend.src.media.cache import CacheStore
 from backend.src.media.object_store import ObjectStore
@@ -40,7 +43,11 @@ class AppContext:
         if settings.object_store_provider == 'filesystem':
             normalize_filesystem_media_paths(db, OBJECT_ROOT)
         self.cache_store = CacheStore()
-        self.ai_gateway = AIGateway()
+
+        # 初始化视频提供商注册中心
+        self.video_provider_registry = self._init_video_provider_registry()
+
+        self.ai_gateway = AIGateway(video_provider_registry=self.video_provider_registry)
         self.scene_service = SceneDesignService(
             self.project_repo,
             self.scene_repo,
@@ -70,6 +77,7 @@ class AppContext:
             self.object_store,
             self.audit_service,
             self.ai_gateway,
+            cache_store=self.cache_store,
         )
         self.render_pipeline = RenderPipeline(
             self.storyboard_repo,
@@ -103,6 +111,32 @@ class AppContext:
             self.final_repo,
         )
         self.render_status_poller.start()
+
+    def _init_video_provider_registry(self) -> VideoProviderRegistry:
+        """初始化视频提供商注册中心"""
+        registry = VideoProviderRegistry()
+
+        # 注册 DashScope 提供商
+        dashscope_client = DashScopeClient(
+            base_url=settings.dashscope_base_url,
+            api_key=settings.dashscope_api_key,
+            image_model=settings.dashscope_image_model,
+            video_model=settings.dashscope_video_model,
+            timeout=settings.dashscope_timeout,
+            poll_interval=settings.dashscope_poll_interval,
+            poll_timeout=settings.dashscope_poll_timeout,
+        )
+        dashscope_provider = DashScopeVideoProvider(
+            client=dashscope_client,
+            models=settings.get_dashscope_video_models(),
+            enabled=True,
+        )
+        registry.register(dashscope_provider)
+
+        # 设置默认模型
+        registry.set_default_model(settings.default_video_model)
+
+        return registry
 
     def close(self) -> None:
         self.render_status_poller.stop()
