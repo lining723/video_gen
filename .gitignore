@@ -2,3 +2,6 @@
 backend/data/
 __pycache__/
 *.pyc
+.venv-py311/
+frontend2/node_modules/
+frontend2/dist/
