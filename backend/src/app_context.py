@@ -64,13 +64,6 @@ class AppContext:
             self.ai_gateway,
             settings.shot_duration_limit,
         )
-        self.subject_pipeline = SubjectPipeline(
-            self.storyboard_repo,
-            self.subject_repo,
-            self.object_store,
-            self.audit_service,
-            self.ai_gateway,
-        )
         self.keyframe_pipeline = KeyframePipeline(
             self.storyboard_repo,
             self.subject_repo,
@@ -79,6 +72,14 @@ class AppContext:
             self.audit_service,
             self.ai_gateway,
             cache_store=self.cache_store,
+        )
+        self.subject_pipeline = SubjectPipeline(
+            self.storyboard_repo,
+            self.subject_repo,
+            self.object_store,
+            self.audit_service,
+            self.ai_gateway,
+            keyframe_pipeline=self.keyframe_pipeline,
         )
         self.render_pipeline = RenderPipeline(
             self.storyboard_repo,

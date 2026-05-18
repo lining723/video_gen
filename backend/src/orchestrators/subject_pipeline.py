@@ -5,12 +5,13 @@ from backend.src.settings.logging import log_event
 
 
 class SubjectPipeline:
-    def __init__(self, storyboard_repo, subject_repo, object_store, audit_service, ai_gateway) -> None:
+    def __init__(self, storyboard_repo, subject_repo, object_store, audit_service, ai_gateway, keyframe_pipeline=None) -> None:
         self.storyboard_repo = storyboard_repo
         self.subject_repo = subject_repo
         self.object_store = object_store
         self.audit_service = audit_service
         self.ai_gateway = ai_gateway
+        self.keyframe_pipeline = keyframe_pipeline
 
     def run(self, project: dict) -> dict:
         shots = self.storyboard_repo.list_by_project(project['id'], project.get('storyboard_version'))
@@ -54,7 +55,15 @@ class SubjectPipeline:
             self.subject_repo.save(asset)
             results.append(asset)
 
-        # 触发关键帧生成
+        # 触发关键帧生成（主体一致的关键帧序列 2x2/3x3/4x4）
+        if self.keyframe_pipeline:
+            try:
+                keyframe_results = self.keyframe_pipeline.run(project)
+                log_event('keyframes.generated_from_subjects', project_id=project['id'], shot_count=len(keyframe_results))
+                result['keyframes'] = keyframe_results
+            except Exception as error:
+                log_event('keyframes.generation_failed', project_id=project['id'], error=str(error))
+
         project['status'] = 'keyframe_generating'
         project['current_stage'] = 'keyframe_generating'
         log_event('subject.completed', project_id=project['id'], count=len(results))

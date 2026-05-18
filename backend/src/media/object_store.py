@@ -18,9 +18,9 @@ class FileObjectStore:
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _target_path(self, project_id: str, name: str) -> Path:
-        directory = self.root / project_id
-        directory.mkdir(parents=True, exist_ok=True)
-        return directory / name
+        path = self.root / project_id / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
 
     def save_text(self, project_id: str, name: str, content: str) -> str:
         path = self._target_path(project_id, name)

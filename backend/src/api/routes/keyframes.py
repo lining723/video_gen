@@ -204,7 +204,89 @@ def register_keyframe_routes(router, context) -> None:
             "message": "Keyframe retry task submitted",
         }
 
+    def generate_keyframes_for_shot(_request, params):
+        """
+        为指定镜头生成关键帧网格
+
+        POST /api/projects/{projectId}/shots/{shotId}/keyframes:generate
+        """
+        project_id = params.get('projectId')
+        shot_id = params.get('shotId')
+
+        if not project_id or not shot_id:
+            return 400, {"ok": False, "error": "Missing projectId or shotId"}
+
+        project = context.project_repo.get(project_id)
+        if not project:
+            return 404, {"ok": False, "error": "Project not found"}
+
+        shot = context.storyboard_repo.get(shot_id)
+        if not shot or shot.get('project_id') != project_id:
+            return 404, {"ok": False, "error": "Shot not found"}
+
+        # 获取主体数据
+        subject_refs = shot.get('subject_refs', ['主角'])
+        subject_name = subject_refs[0] if subject_refs else '主角'
+        subject = context.subject_repo.get_by_name(project_id, subject_name)
+        if not subject:
+            # 使用第一个可用主体
+            subjects = context.subject_repo.list_by_project(project_id)
+            subject = subjects[0] if subjects else {
+                'name': subject_name,
+                'feature_description': '',
+                'image_version': 1,
+            }
+
+        # 生成关键帧
+        grid = context.keyframe_pipeline.generate_keyframes_for_shot(shot, subject, project)
+        return 200, {"ok": True, "item": grid}
+
+    def generate_composite_grid(_request, params):
+        """
+        一次 API 调用生成 4x4 网格序列帧图（contact sheet）
+
+        POST /api/projects/{projectId}/shots/{shotId}/keyframes:generate-composite
+        """
+        project_id = params.get('projectId')
+        shot_id = params.get('shotId')
+
+        if not project_id or not shot_id:
+            return 400, {"ok": False, "error": "Missing projectId or shotId"}
+
+        project = context.project_repo.get(project_id)
+        if not project:
+            return 404, {"ok": False, "error": "Project not found"}
+
+        shot = context.storyboard_repo.get(shot_id)
+        if not shot or shot.get('project_id') != project_id:
+            return 404, {"ok": False, "error": "Shot not found"}
+
+        subject_refs = shot.get('subject_refs', ['主角'])
+        subject_name = subject_refs[0] if subject_refs else '主角'
+        subject = context.subject_repo.get_by_name(project_id, subject_name)
+        if not subject:
+            subjects = context.subject_repo.list_by_project(project_id)
+            subject = subjects[0] if subjects else {
+                'name': subject_name,
+                'feature_description': '',
+                'image_version': 1,
+            }
+
+        try:
+            result = context.keyframe_pipeline.generate_composite_grid(shot, subject, project)
+            return 200, {
+                "ok": True,
+                "grid_type": result['grid_type'],
+                "frame_count": result['frame_count'],
+                "image_url": _media_url(result['image_path']),
+            }
+        except Exception as error:
+            log_event('keyframe.composite_failed', project_id=project_id, shot_id=shot_id, error=str(error))
+            return 500, {"ok": False, "error": str(error)}
+
     # 注册路由
     router.add("GET", "/api/projects/{projectId}/shots/{shotId}/keyframes", get_shot_keyframes)
     router.add("GET", "/api/projects/{projectId}/keyframes/status", get_project_keyframes_status)
     router.add("POST", "/api/projects/{projectId}/shots/{shotId}/keyframes/{position}/retry", retry_keyframe)
+    router.add("POST", "/api/projects/{projectId}/shots/{shotId}/keyframes:generate", generate_keyframes_for_shot)
+    router.add("POST", "/api/projects/{projectId}/shots/{shotId}/keyframes:generate-composite", generate_composite_grid)

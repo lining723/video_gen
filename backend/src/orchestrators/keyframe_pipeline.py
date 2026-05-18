@@ -498,6 +498,82 @@ class KeyframePipeline:
 
         return result_frame
 
+    def generate_composite_grid(self, shot: dict, subject: dict, project: dict) -> dict:
+        """
+        一次 API 调用生成包含所有关键帧的 4x4 网格图
+
+        与逐帧生成不同，此方法构建一个描述完整网格布局的 prompt，
+        让模型直接输出一张包含所有帧的 contact sheet。
+
+        Returns:
+            {'image_path': str, 'source_url': str, 'grid_type': str, 'frame_count': int}
+        """
+        duration = shot.get('duration', 6)
+        grid_type, frame_count = calculate_grid_size(duration)
+        time_ratios = calculate_time_ratios(frame_count)
+
+        # 构建网格格布局描述
+        grid_desc_parts = [
+            f"生成一张{grid_type}网格布局的序列帧图（contact sheet），共{frame_count}帧。",
+            f"每个格子里是同一个角色的不同动作瞬间，角色外观必须完全一致。",
+            f"角色：{subject.get('name', '主角')}。",
+        ]
+        if subject.get('feature_description'):
+            grid_desc_parts.append(f"角色特征：{subject['feature_description']}。")
+        if shot.get('description'):
+            grid_desc_parts.append(f"场景：{shot['description']}。")
+        if shot.get('shot_type'):
+            grid_desc_parts.append(f"镜头类型：{shot['shot_type']}。")
+
+        # 逐帧描述
+        grid_desc_parts.append("各帧内容：")
+        for i, tr in enumerate(time_ratios):
+            phase = "起始" if tr < 0.33 else ("进行" if tr < 0.67 else "结束")
+            grid_desc_parts.append(f"第{i+1}帧（进度{tr*100:.0f}%，{phase}阶段）")
+
+        # 风格
+        if project.get('prompt'):
+            grid_desc_parts.append(f"整体风格：{project['prompt']}。")
+        grid_desc_parts.append("要求：网格线清晰，每格大小一致，角色外观统一。")
+
+        composite_prompt = "。".join(grid_desc_parts)
+
+        # 调用 AI 生成
+        result = self.ai_gateway.generate_subject_image(
+            subject_name=subject.get('name', '主角'),
+            profile=f"4x4网格序列帧：{composite_prompt}",
+            style_prompt=project.get('prompt', ''),
+            feature_description=subject.get('feature_description', ''),
+        )
+
+        provider_url = result.get('provider_url')
+        if not provider_url:
+            raise RuntimeError("Composite grid generation returned no URL")
+
+        shot_id = shot["id"]
+        storage_path = self.object_store.save_from_url(
+            project['id'],
+            f'keyframes/{shot_id}/composite_grid.png',
+            provider_url,
+            content_type='image/png',
+        )
+
+        log_event(
+            'keyframe.composite_generated',
+            project_id=project['id'],
+            shot_id=shot['id'],
+            grid_type=grid_type,
+            frame_count=frame_count,
+            image_path=storage_path,
+        )
+
+        return {
+            'image_path': storage_path,
+            'source_url': provider_url,
+            'grid_type': grid_type,
+            'frame_count': frame_count,
+        }
+
     def run(self, project: dict, force: bool = False) -> list[dict]:
         """
         为项目的所有镜头生成关键帧

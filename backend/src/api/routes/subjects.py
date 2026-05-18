@@ -297,6 +297,21 @@ def register_subject_routes(router, context) -> None:
 
         context.subject_repo.save(asset)
         log_event('subject.shot_generated', project_id=project['id'], shot_id=shot['id'], mode=mode, variant_hint=variant_hint)
+
+        # 触发该镜头的关键帧生成（主体一致的关键帧序列）
+        try:
+            subject_refs = shot.get('subject_refs', ['主角'])
+            subject_name = subject_refs[0] if subject_refs else '主角'
+            subject_data = context.subject_repo.get_by_name(project['id'], subject_name) or {
+                'name': subject_name,
+                'feature_description': '',
+                'image_version': 1,
+            }
+            context.keyframe_pipeline.generate_keyframes_for_shot(shot, subject_data, project)
+            log_event('keyframes.triggered_for_shot', project_id=project['id'], shot_id=shot['id'])
+        except Exception as error:
+            log_event('keyframes.shot_trigger_failed', project_id=project['id'], shot_id=shot['id'], error=str(error))
+
         return 201, {"ok": True, "item": asset}
 
     def regenerate_subject(request, params):

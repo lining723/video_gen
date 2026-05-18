@@ -112,3 +112,11 @@ class SubjectRepository:
             (project_id,),
         )
         return [dict(row) for row in rows]
+
+    def get_by_name(self, project_id: str, name: str) -> dict | None:
+        """Get a subject by name within a project."""
+        row = self.db.fetchone(
+            "SELECT * FROM subjects WHERE project_id = ? AND name = ? ORDER BY image_version DESC LIMIT 1",
+            (project_id, name),
+        )
+        return dict(row) if row else None

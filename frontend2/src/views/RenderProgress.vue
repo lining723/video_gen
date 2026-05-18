@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTimeline } from '@/api/projects'
 import {
@@ -9,6 +9,7 @@ import {
   lockSubject, unlockSubject, updateSubjectFeature,
   regenerateSubject, getSubjectVersions, rollbackSubjectVersion,
 } from '@/api/render'
+import { getKeyframes, generateKeyframes, retryKeyframe, generateCompositeGrid, type KeyframeGrid, type CompositeGrid } from '@/api/keyframes'
 import { mediaUrl } from '@/api/http'
 import type { Timeline, RenderTask, Subject } from '@/types'
 import { ElMessage } from 'element-plus'
@@ -20,6 +21,8 @@ const projectId = route.params.projectId as string
 const data = ref<Timeline | null>(null)
 const composeError = ref('')
 const pollTimer = ref<ReturnType<typeof setInterval> | null>(null)
+const keyframeGrids = reactive<Record<string, KeyframeGrid | null>>({})
+const compositeGrids = reactive<Record<string, CompositeGrid | null>>({})
 
 // Compose settings
 const enableSubtitles = ref(true)
@@ -77,6 +80,11 @@ function getShotSubject(shotId: string): Subject | undefined {
   return (data.value?.subjects || []).find((s) => s.shot_id === shotId)
 }
 
+function getGridColumns(gridType: string): string {
+  const cols = parseInt(gridType.split('x')[0], 10)
+  return `repeat(${cols}, 1fr)`
+}
+
 async function load() {
   const result = await getTimeline(projectId)
   data.value = result.item
@@ -84,11 +92,55 @@ async function load() {
   enableBgm.value = !!result.item.project.compose_enable_bgm
   enableVoiceover.value = !!result.item.project.compose_enable_voiceover
   enableTransitions.value = !!result.item.project.compose_enable_transitions
+  // 加载关键帧数据
+  await loadKeyframes()
+}
+
+async function loadKeyframes() {
+  for (const shot of data.value?.storyboard || []) {
+    try {
+      const grid = await getKeyframes(projectId, shot.id)
+      keyframeGrids[shot.id] = grid
+    } catch {
+      keyframeGrids[shot.id] = null
+    }
+  }
+}
+
+async function handleGenerateKeyframes(shotId: string) {
+  try {
+    const result = await generateKeyframes(projectId, shotId)
+    keyframeGrids[shotId] = result.item
+    ElMessage.success('关键帧生成成功')
+  } catch (e: any) {
+    ElMessage.error(e.message || '关键帧生成失败')
+  }
+}
+
+async function handleGenerateCompositeGrid(shotId: string) {
+  try {
+    const result = await generateCompositeGrid(projectId, shotId)
+    compositeGrids[shotId] = result
+    ElMessage.success('网格图生成成功（1次API调用）')
+  } catch (e: any) {
+    ElMessage.error(e.message || '网格图生成失败')
+  }
+}
+
+async function handleRetryKeyframe(shotId: string, position: number) {
+  try {
+    await retryKeyframe(projectId, shotId, position)
+    ElMessage.success('正在重新生成关键帧...')
+    setTimeout(() => loadKeyframes(), 2000)
+  } catch {
+    ElMessage.error('重试失败')
+  }
 }
 
 async function handleGenerateSubjects() {
   await generateSubjects(projectId)
   await load()
+  ElMessage.success('主体图及关键帧已生成')
 }
 
 async function handleStartRenders(force = false) {
@@ -103,6 +155,7 @@ async function handleComposeVideo() {
     setTimeout(() => router.push(`/projects/${projectId}/final-video`), 400)
   } catch (e: any) {
     composeError.value = e.payload?.details?.blockers?.map((b: any) => `镜头 ${b.sequence} ${b.reason}`).join('；') || e.message
+    ElMessage.error(composeError.value)
   }
 }
 
@@ -276,7 +329,7 @@ onUnmounted(stopPolling)
       </el-row>
     </el-card>
 
-    <!-- Subject assets + Render tasks -->
+    <!-- Subject assets + Render tasks + Keyframes -->
     <el-row :gutter="18">
       <!-- Subjects -->
       <el-col :span="12">
@@ -339,7 +392,7 @@ onUnmounted(stopPolling)
         </el-card>
       </el-col>
 
-      <!-- Render tasks -->
+      <!-- Render tasks + Keyframes -->
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
@@ -367,6 +420,50 @@ onUnmounted(stopPolling)
                 <el-button size="small" @click="handleQueryStatus(shot.id)">查询进度</el-button>
                 <el-button size="small" @click="handleRetryRender(shot.id)">重新生成</el-button>
                 <el-button size="small" type="danger" @click="handleRetryRender(shot.id, true)">跳过缓存重渲染</el-button>
+              </div>
+
+              <!-- Keyframe grid -->
+              <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(29,26,23,0.08)">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px">
+                  <span class="muted" style="font-weight: 600">
+                    关键帧
+                    <template v-if="keyframeGrids[shot.id]">
+                      {{ keyframeGrids[shot.id]!.grid_type }} · {{ keyframeGrids[shot.id]!.frame_count }}帧
+                    </template>
+                  </span>
+                  <el-button size="small" @click="handleGenerateKeyframes(shot.id)">
+                    {{ keyframeGrids[shot.id] ? '重新生成关键帧' : '生成关键帧' }}
+                  </el-button>
+                  <el-button size="small" type="success" @click="handleGenerateCompositeGrid(shot.id)">
+                    网格图 (composite)
+                  </el-button>
+                </div>
+                <div v-if="keyframeGrids[shot.id]" class="keyframe-grid" :style="{ gridTemplateColumns: getGridColumns(keyframeGrids[shot.id]!.grid_type) }">
+                  <div
+                    v-for="frame in keyframeGrids[shot.id]!.frames"
+                    :key="frame.position"
+                    class="keyframe-cell"
+                    :class="{ 'frame-succeeded': frame.status === 'succeeded', 'frame-failed': frame.status === 'failed', 'frame-pending': frame.status !== 'succeeded' && frame.status !== 'failed' }"
+                  >
+                    <img v-if="frame.image_url && frame.status === 'succeeded'" :src="frame.image_url" :alt="`帧 ${frame.position + 1}`" />
+                    <div v-else-if="frame.status === 'failed'" class="frame-error">
+                      <span>失败</span>
+                      <el-button size="small" type="danger" @click="handleRetryKeyframe(shot.id, frame.position)">重试</el-button>
+                    </div>
+                    <div v-else class="frame-loading">
+                      <span>{{ frame.status === 'generating' ? '生成中...' : '等待中' }}</span>
+                    </div>
+                    <span class="frame-label">{{ Math.round(frame.time_ratio * 100) }}%</span>
+                  </div>
+                </div>
+                <!-- Composite grid -->
+                <div v-if="compositeGrids[shot.id]" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(29,26,23,0.08)">
+                  <span class="muted" style="font-weight: 600">网格图 {{ compositeGrids[shot.id]!.grid_type }} · {{ compositeGrids[shot.id]!.frame_count }}帧 (1次API)</span>
+                  <div class="media-preview" style="margin-top: 8px">
+                    <img :src="compositeGrids[shot.id]!.image_url" alt="Composite grid" style="width: 100%; border-radius: 8px" />
+                  </div>
+                </div>
+                <div v-else-if="!keyframeGrids[shot.id]" class="muted">尚未生成关键帧</div>
               </div>
             </div>
           </div>
@@ -417,4 +514,55 @@ onUnmounted(stopPolling)
 .task-item:first-child { border-top: 0; padding-top: 0; }
 .task-item-head { display: flex; justify-content: space-between; align-items: center; }
 .task-item-head h4 { margin: 0; font-size: 0.95rem; }
+
+/* Keyframe grid styles */
+.keyframe-grid {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.keyframe-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(29, 26, 23, 0.1);
+}
+.keyframe-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.frame-label {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.frame-succeeded { border-color: rgba(47, 107, 83, 0.3); }
+.frame-failed { border-color: rgba(175, 90, 42, 0.3); }
+.frame-pending { border-color: rgba(29, 26, 23, 0.08); }
+.frame-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  color: var(--warning);
+  font-size: 0.8rem;
+}
+.frame-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
 </style>
