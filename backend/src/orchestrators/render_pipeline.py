@@ -14,7 +14,7 @@ from backend.src.workers.tasks import submit_task
 
 
 class RenderPipeline:
-    def __init__(self, storyboard_repo, subject_repo, render_repo, cache_store, object_store, project_repo, audit_service, ai_gateway) -> None:
+    def __init__(self, storyboard_repo, subject_repo, render_repo, cache_store, object_store, project_repo, audit_service, ai_gateway, keyframe_repo=None) -> None:
         self.storyboard_repo = storyboard_repo
         self.subject_repo = subject_repo
         self.render_repo = render_repo
@@ -23,6 +23,7 @@ class RenderPipeline:
         self.project_repo = project_repo
         self.audit_service = audit_service
         self.ai_gateway = ai_gateway
+        self.keyframe_repo = keyframe_repo
 
     def _fallback_content(self, shot: dict) -> str:
         return f"DEMO VIDEO for {shot['description']}\n{shot['subtitle_text']}\n{shot.get('dubbing_text', '')}\n{shot.get('voiceover_text', '')}"
@@ -72,6 +73,19 @@ class RenderPipeline:
         return self._media_url(image_path)
 
     def _pick_first_frame_url(self, shot: dict, subjects: list[dict]) -> str | None:
+        # 优先使用 composite 关键帧网格图（包含完整时序信息）
+        if self.keyframe_repo:
+            try:
+                grid = self.keyframe_repo.get_by_shot(shot.get('project_id', ''), shot['id'])
+                if grid and grid.get('composite_image_path'):
+                    composite_path = grid['composite_image_path']
+                    if self._image_content_type(composite_path):
+                        composite_url = self._media_url(composite_path)
+                        log_event('render.using_composite_grid', shot_id=shot['id'], grid_type=grid.get('composite_grid_type', ''))
+                        return composite_url
+            except Exception:
+                pass
+
         latest_global_by_name = {}
         latest_global = []
 

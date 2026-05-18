@@ -21,6 +21,13 @@ class SubjectPipeline:
         results = []
         diagnostics = []
         for name in names:
+            # 跳过已锁定的主体
+            existing = self.subject_repo.get_by_name(project['id'], name)
+            if existing and existing.get('is_locked'):
+                log_event('subject.skipped_locked', project_id=project['id'], subject_name=name)
+                results.append(existing)
+                continue
+
             profile = f'{name} 的统一形象'
             generated = self.ai_gateway.generate_subject_image(name, profile, style_prompt, model=image_model)
             provider_url = generated.get('provider_url')
@@ -55,12 +62,18 @@ class SubjectPipeline:
             self.subject_repo.save(asset)
             results.append(asset)
 
-        # 触发关键帧生成（主体一致的关键帧序列 2x2/3x3/4x4）
+        # 触发关键帧生成（主体一致的关键帧序列 2x2/3x3/4x4）—— 默认 Composite 模式
         if self.keyframe_pipeline:
             try:
-                keyframe_results = self.keyframe_pipeline.run(project)
+                keyframe_results = []
+                for shot in shots:
+                    subject_refs = shot.get('subject_refs', ['主角'])
+                    subject_name = subject_refs[0] if subject_refs else '主角'
+                    # 查找匹配的主体资产
+                    subject = next((r for r in results if r['name'] == subject_name), results[0] if results else {'name': subject_name, 'feature_description': '', 'image_version': 1})
+                    composite = self.keyframe_pipeline.generate_composite_grid(shot, subject, project)
+                    keyframe_results.append(composite)
                 log_event('keyframes.generated_from_subjects', project_id=project['id'], shot_count=len(keyframe_results))
-                result['keyframes'] = keyframe_results
             except Exception as error:
                 log_event('keyframes.generation_failed', project_id=project['id'], error=str(error))
 

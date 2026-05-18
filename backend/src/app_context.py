@@ -90,6 +90,7 @@ class AppContext:
             self.project_repo,
             self.audit_service,
             self.ai_gateway,
+            keyframe_repo=self.keyframe_repo,
         )
         self.render_status_poller = RenderStatusPoller(
             self.render_repo,

@@ -322,6 +322,9 @@ def register_subject_routes(router, context) -> None:
         if not subject or subject.get('project_id') != project['id']:
             return 404, {"ok": False, "error": "Subject not found"}
 
+        if subject.get('is_locked'):
+            return 400, {"ok": False, "error": "Subject is locked. Unlock it first to regenerate."}
+
         payload = request.get('json') or {}
         cascade_render = bool(payload.get('cascade_render', False))
 

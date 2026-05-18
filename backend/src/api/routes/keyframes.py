@@ -56,12 +56,19 @@ def register_keyframe_routes(router, context) -> None:
 
             frames.append(frame_data)
 
-        return 200, {
+        resp = {
             "ok": True,
             "grid_type": grid.get('grid_type', '3x3'),
             "frame_count": grid.get('frame_count', 9),
             "frames": frames,
         }
+
+        # 附加 composite 网格图信息
+        if grid.get('composite_image_path'):
+            resp['composite_image_url'] = _media_url(grid['composite_image_path'])
+            resp['composite_grid_type'] = grid.get('composite_grid_type', grid.get('grid_type', '4x4'))
+
+        return 200, resp
 
     def get_project_keyframes_status(_request, params):
         """

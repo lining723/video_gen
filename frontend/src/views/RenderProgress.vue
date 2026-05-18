@@ -101,6 +101,14 @@ async function loadKeyframes() {
     try {
       const grid = await getKeyframes(projectId, shot.id)
       keyframeGrids[shot.id] = grid
+      // 自动加载 composite 网格图
+      if (grid.composite_image_url) {
+        compositeGrids[shot.id] = {
+          grid_type: grid.composite_grid_type || grid.grid_type,
+          frame_count: grid.frame_count,
+          image_url: grid.composite_image_url,
+        }
+      }
     } catch {
       keyframeGrids[shot.id] = null
     }
@@ -381,7 +389,7 @@ onUnmounted(stopPolling)
               <div style="display: flex; gap: 6px; margin-top: 8px">
                 <el-button v-if="!subject.is_locked" size="small" type="warning" @click="lockSubject(projectId, subject.id).then(load)">锁定特征</el-button>
                 <el-button v-else size="small" @click="unlockSubject(projectId, subject.id).then(load)">解锁</el-button>
-                <el-button size="small" :disabled="!subject.is_locked" @click="regenerateSubject(projectId, subject.id).then(load)">重新生成</el-button>
+                <el-button size="small" :disabled="!!subject.is_locked" @click="regenerateSubject(projectId, subject.id).then(load)">重新生成</el-button>
               </div>
               <div v-if="subject.image_path" class="media-preview" style="margin-top: 10px">
                 <img :src="mediaUrl(subject.image_path)" :alt="subject.name" />

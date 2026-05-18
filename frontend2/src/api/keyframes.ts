@@ -13,6 +13,8 @@ export interface KeyframeGrid {
   grid_type: string
   frame_count: number
   frames: KeyframeFrame[]
+  composite_image_url?: string
+  composite_grid_type?: string
 }
 
 export const getKeyframes = (projectId: string, shotId: string) =>

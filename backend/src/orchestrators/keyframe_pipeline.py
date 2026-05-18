@@ -567,6 +567,13 @@ class KeyframePipeline:
             image_path=storage_path,
         )
 
+        # 持久化 composite 信息到 keyframe_repo
+        existing = self.keyframe_repo.get_by_shot(project['id'], shot['id'])
+        if existing:
+            existing['composite_image_path'] = storage_path
+            existing['composite_grid_type'] = grid_type
+            self.keyframe_repo.save(existing)
+
         return {
             'image_path': storage_path,
             'source_url': provider_url,
