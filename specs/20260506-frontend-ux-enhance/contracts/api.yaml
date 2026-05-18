@@ -1,0 +1,187 @@
+openapi: "3.0.3"
+info:
+  title: Video Gen Platform - Project List API (Extended)
+  version: "1.1.0"
+  description: |
+    项目列表 API 扩展：新增分页和搜索参数。
+    向后兼容：不传分页参数时行为与原 API 一致。
+
+paths:
+  /api/projects:
+    get:
+      summary: 获取项目列表
+      description: |
+        获取所有项目或根据条件分页/搜索。
+        - 不传 page 参数时返回全部项目（向后兼容）
+        - 传 page 参数时启用分页模式，响应包含 total/page/page_size/total_pages
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: 页码（从 1 开始）。不传则返回全部数据。
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 每页条数。最大 100。
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 搜索关键词，按项目名称模糊匹配（不区分大小写）。
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ProjectListResponse"
+                  - $ref: "#/components/schemas/ProjectListPaginatedResponse"
+              examples:
+                all:
+                  summary: 不分页（向后兼容）
+                  value:
+                    ok: true
+                    items:
+                      - id: "abc123"
+                        name: "产品宣传视频"
+                        prompt: "创建一个30秒的产品宣传片"
+                        status: "active"
+                        current_stage: "storyboard"
+                        created_at: "2026-05-01T08:00:00Z"
+                paginated:
+                  summary: 分页模式
+                  value:
+                    ok: true
+                    items:
+                      - id: "abc123"
+                        name: "产品宣传视频"
+                        prompt: "创建一个30秒的产品宣传片"
+                        status: "active"
+                        current_stage: "storyboard"
+                        created_at: "2026-05-01T08:00:00Z"
+                    total: 42
+                    page: 1
+                    page_size: 20
+                    total_pages: 3
+
+    post:
+      summary: 创建项目
+      description: 创建新的视频项目。无变更（与现有 API 一致）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                prompt:
+                  type: string
+                scene_count:
+                  type: integer
+                text_model:
+                  type: string
+                image_model:
+                  type: string
+                video_model:
+                  type: string
+      responses:
+        "201":
+          description: 创建成功
+
+  /api/projects/{projectId}:
+    get:
+      summary: 获取项目详情
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+
+  /api/projects/{projectId}:settings:
+    put:
+      summary: 更新项目设置
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 更新成功
+
+components:
+  schemas:
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID
+        name:
+          type: string
+          description: 项目名称
+        prompt:
+          type: string
+          description: 项目提示词
+        status:
+          type: string
+          description: 项目状态
+        current_stage:
+          type: string
+          description: 当前阶段
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+
+    ProjectListPaginatedResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          type: integer
+          description: 符合当前筛选条件的总条数
+        page:
+          type: integer
+          description: 当前页码
+        page_size:
+          type: integer
+          description: 每页条数
+        total_pages:
+          type: integer
+          description: 总页数

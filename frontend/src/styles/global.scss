@@ -1,0 +1,88 @@
+:root {
+  --bg: #f4efe7;
+  --bg-deep: #e8dfd2;
+  --accent: #b85c38;
+  --accent-strong: #9f4927;
+  --text: #1d1a17;
+  --text-muted: #6c6258;
+  --success: #2f6b53;
+  --warning: #af5a2a;
+  --surface-bg: rgba(255, 252, 247, 0.82);
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 64px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(184, 92, 56, 0.12), transparent 28%),
+    radial-gradient(circle at right center, rgba(96, 122, 102, 0.12), transparent 22%),
+    linear-gradient(180deg, #fbf7f0 0%, var(--bg) 44%, var(--bg-deep) 100%);
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hero-note {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(29, 26, 23, 0.08);
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.notice {
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(29, 26, 23, 0.08);
+}
+
+.notice.info {
+  background: rgba(64, 113, 140, 0.1);
+  color: #25536b;
+}
+
+.notice.success {
+  background: rgba(47, 107, 83, 0.1);
+  color: var(--success);
+}
+
+.notice.warn {
+  background: rgba(175, 90, 42, 0.1);
+  color: var(--warning);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.media-preview img,
+.media-preview video {
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.media-preview video {
+  max-height: 360px;
+  background: rgba(18, 15, 12, 0.94);
+}

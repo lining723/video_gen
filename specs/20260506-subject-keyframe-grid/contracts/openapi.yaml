@@ -1,0 +1,392 @@
+openapi: 3.0.3
+info:
+  title: Keyframe Grid API
+  description: 九宫格关键帧生成API接口规范
+  version: 1.0.0
+  contact:
+    name: 智能视频生成平台
+
+servers:
+  - url: http://127.0.0.1:8100/api
+    description: 本地开发服务器
+
+paths:
+  /projects/{project_id}/shots/{shot_id}/keyframes:
+    get:
+      summary: 获取镜头关键帧
+      description: 获取指定镜头的关键帧网格信息，包含网格类型、帧数量和所有关键帧详情
+      operationId: getShotKeyframes
+      tags:
+        - Keyframes
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: 项目ID
+          schema:
+            type: string
+            format: uuid
+        - name: shot_id
+          in: path
+          required: true
+          description: 镜头ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功获取关键帧信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeyframeGridResponse'
+              example:
+                grid_type: "3x3"
+                frame_count: 9
+                frames:
+                  - position: 0
+                    time_ratio: 0.0
+                    image_url: "/media/projects/proj-123/keyframes/shot-456/frame_0.png"
+                    thumbnail_url: "/media/projects/proj-123/keyframes/shot-456/frame_0_thumb.png"
+                    status: "succeeded"
+                  - position: 1
+                    time_ratio: 0.125
+                    image_url: "/media/projects/proj-123/keyframes/shot-456/frame_1.png"
+                    thumbnail_url: "/media/projects/proj-123/keyframes/shot-456/frame_1_thumb.png"
+                    status: "succeeded"
+        '404':
+          description: 项目或镜头不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "NOT_FOUND"
+                message: "镜头 shot-456 不存在"
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /projects/{project_id}/shots/{shot_id}/keyframes/download:
+    get:
+      summary: 下载关键帧网格图片
+      description: 下载指定镜头的关键帧网格合并图片（PNG格式）
+      operationId: downloadKeyframeGrid
+      tags:
+        - Keyframes
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: 项目ID
+          schema:
+            type: string
+            format: uuid
+        - name: shot_id
+          in: path
+          required: true
+          description: 镜头ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功返回关键帧网格图片
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: 项目或镜头不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /projects/{project_id}/shots/{shot_id}/keyframes/{position}/retry:
+    post:
+      summary: 重试生成关键帧
+      description: 重新生成指定位置的关键帧（最多重试3次）
+      operationId: retryKeyframe
+      tags:
+        - Keyframes
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: 项目ID
+          schema:
+            type: string
+            format: uuid
+        - name: shot_id
+          in: path
+          required: true
+          description: 镜头ID
+          schema:
+            type: string
+            format: uuid
+        - name: position
+          in: path
+          required: true
+          description: 关键帧位置（0到frame_count-1）
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: 重试任务已提交
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetryResponse'
+              example:
+                status: "retrying"
+                retry_count: 1
+                message: "关键帧重新生成任务已提交"
+        '400':
+          description: 重试次数已达上限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "RETRY_LIMIT_EXCEEDED"
+                message: "重试次数已达上限 3"
+        '404':
+          description: 项目、镜头或关键帧不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /projects/{project_id}/keyframes/status:
+    get:
+      summary: 获取项目关键帧生成状态
+      description: 获取项目中所有镜头的关键帧生成状态汇总
+      operationId: getProjectKeyframesStatus
+      tags:
+        - Keyframes
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: 项目ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功获取状态汇总
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectKeyframesStatusResponse'
+              example:
+                project_id: "proj-123"
+                total_shots: 5
+                completed_shots: 3
+                generating_shots: 1
+                failed_shots: 1
+                total_frames: 45
+                succeeded_frames: 38
+                failed_frames: 7
+                shots:
+                  - shot_id: "shot-1"
+                    status: "completed"
+                    grid_type: "3x3"
+                    frame_count: 9
+                    succeeded_count: 9
+                    failed_count: 0
+                  - shot_id: "shot-2"
+                    status: "generating"
+                    grid_type: "4x4"
+                    frame_count: 16
+                    succeeded_count: 10
+                    failed_count: 0
+        '404':
+          description: 项目不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    KeyframeStatus:
+      type: string
+      enum:
+        - pending
+        - generating
+        - succeeded
+        - failed
+      description: 关键帧生成状态
+
+    GridType:
+      type: string
+      enum:
+        - "2x2"
+        - "3x3"
+        - "4x4"
+      description: 网格类型
+
+    KeyframeFrameResponse:
+      type: object
+      required:
+        - position
+        - time_ratio
+        - status
+      properties:
+        position:
+          type: integer
+          minimum: 0
+          description: 网格位置（0到frame_count-1）
+        time_ratio:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: 时间进度比例
+        image_url:
+          type: string
+          format: uri
+          description: 图片URL
+        thumbnail_url:
+          type: string
+          format: uri
+          description: 缩略图URL
+        status:
+          $ref: '#/components/schemas/KeyframeStatus'
+        error_message:
+          type: string
+          description: 错误信息（失败时）
+
+    KeyframeGridResponse:
+      type: object
+      required:
+        - grid_type
+        - frame_count
+        - frames
+      properties:
+        grid_type:
+          $ref: '#/components/schemas/GridType'
+        frame_count:
+          type: integer
+          enum: [4, 9, 16]
+          description: 关键帧数量
+        frames:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeyframeFrameResponse'
+          description: 关键帧列表
+
+    RetryResponse:
+      type: object
+      required:
+        - status
+        - retry_count
+      properties:
+        status:
+          type: string
+          enum: ["retrying"]
+          description: 重试状态
+        retry_count:
+          type: integer
+          minimum: 1
+          maximum: 3
+          description: 当前重试次数
+        message:
+          type: string
+          description: 提示信息
+
+    ProjectKeyframesStatusResponse:
+      type: object
+      required:
+        - project_id
+        - total_shots
+        - completed_shots
+        - generating_shots
+        - failed_shots
+      properties:
+        project_id:
+          type: string
+          format: uuid
+          description: 项目ID
+        total_shots:
+          type: integer
+          description: 镜头总数
+        completed_shots:
+          type: integer
+          description: 已完成镜头数
+        generating_shots:
+          type: integer
+          description: 生成中镜头数
+        failed_shots:
+          type: integer
+          description: 失败镜头数
+        total_frames:
+          type: integer
+          description: 关键帧总数
+        succeeded_frames:
+          type: integer
+          description: 成功关键帧数
+        failed_frames:
+          type: integer
+          description: 失败关键帧数
+        shots:
+          type: array
+          items:
+            type: object
+            properties:
+              shot_id:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum: ["pending", "generating", "completed", "failed"]
+              grid_type:
+                $ref: '#/components/schemas/GridType'
+              frame_count:
+                type: integer
+              succeeded_count:
+                type: integer
+              failed_count:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: 错误代码
+        message:
+          type: string
+          description: 错误信息
+
+tags:
+  - name: Keyframes
+    description: 关键帧管理相关接口

@@ -1,4 +1,4 @@
-const PROJECT_LABELS = {
+const PROJECT_LABELS: Record<string, string> = {
   draft: '草稿',
   created: '已创建',
   scene_design_pending: '待生成场景',
@@ -12,9 +12,9 @@ const PROJECT_LABELS = {
   video_rendering: '成片合成中',
   completed: '已完成',
   failed: '失败',
-};
+}
 
-export function formatProjectLabel(value) {
-  if (!value) return '未开始';
-  return PROJECT_LABELS[value] || String(value).replace(/_/g, ' ');
+export function formatProjectLabel(value: string | undefined): string {
+  if (!value) return '未开始'
+  return PROJECT_LABELS[value] || String(value).replace(/_/g, ' ')
 }
